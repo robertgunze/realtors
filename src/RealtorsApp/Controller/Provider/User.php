@@ -2,7 +2,7 @@
 
 class User implements ControllerProviderInterface{
     
-    public function connect(Application $app){
+    public function connect(\Silex\Application $app){
         
         $users = $app['controllers_factory'];
         
