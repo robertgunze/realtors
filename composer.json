@@ -1,0 +1,19 @@
+{
+    "type": "application",
+    "description": "Realtors App",
+    "keywords": ["neo4j","graph","api","client","rest"],
+    "authors": [
+        {"name": "Robert Gunze", "email": "robert.gunze@empalla.co.tz", "homepage": "http://empalla.co.tz"}
+    ],
+    "require": {
+        "php": "~5.4",
+        "neoxygen/neoclient": "~2.1",
+        "silex/silex": "~2.0",
+        "twig/twig": "~1.1"
+    },
+    "autoload": {
+    "psr-4": {
+        "RealtorsApp\\": "src/RealtorsApp/"
+    }
+},
+}
