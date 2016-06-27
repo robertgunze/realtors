@@ -6,14 +6,14 @@
         {"name": "Robert Gunze", "email": "robert.gunze@empalla.co.tz", "homepage": "http://empalla.co.tz"}
     ],
     "require": {
-        "php": "~5.4",
-        "neoxygen/neoclient": "~2.1",
+        "php": "~5.5",
         "silex/silex": "~2.0",
-        "twig/twig": "~1.1"
+        "twig/twig": "~1.1",
+        "graphaware/neo4j-php-client": "^3.4"
     },
     "autoload": {
     "psr-4": {
         "RealtorsApp\\": "src/RealtorsApp/"
     }
-},
+   }
 }

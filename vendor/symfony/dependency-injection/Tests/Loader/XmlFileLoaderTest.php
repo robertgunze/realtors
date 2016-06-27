@@ -84,6 +84,19 @@ class XmlFileLoaderTest extends \PHPUnit_Framework_TestCase
         $this->assertInstanceOf('DOMDocument', $xml, '->parseFileToDOM() returns an SimpleXMLElement object');
     }
 
+    public function testLoadWithExternalEntitiesDisabled()
+    {
+        $disableEntities = libxml_disable_entity_loader(true);
+
+        $containerBuilder = new ContainerBuilder();
+        $loader = new XmlFileLoader($containerBuilder, new FileLocator(self::$fixturesPath.'/xml'));
+        $loader->load('services2.xml');
+
+        libxml_disable_entity_loader($disableEntities);
+
+        $this->assertTrue(count($containerBuilder->getParameterBag()->all()) > 0, 'Parameters can be read from the config file.');
+    }
+
     public function testLoadParameters()
     {
         $container = new ContainerBuilder();
@@ -208,29 +221,6 @@ class XmlFileLoaderTest extends \PHPUnit_Framework_TestCase
         $fooArgs = $services['foo']->getArguments();
         $barArgs = $services['bar']->getArguments();
         $this->assertSame($fooArgs[0], $barArgs[0]);
-    }
-
-    /**
-     * @group legacy
-     */
-    public function testLegacyLoadServices()
-    {
-        $container = new ContainerBuilder();
-        $loader = new XmlFileLoader($container, new FileLocator(self::$fixturesPath.'/xml'));
-        $loader->load('legacy-services6.xml');
-        $services = $container->getDefinitions();
-        $this->assertEquals('FooClass', $services['constructor']->getClass());
-        $this->assertEquals('getInstance', $services['constructor']->getFactoryMethod());
-        $this->assertNull($services['factory_service']->getClass());
-        $this->assertEquals('baz_factory', $services['factory_service']->getFactoryService());
-        $this->assertEquals('getInstance', $services['factory_service']->getFactoryMethod());
-        $this->assertEquals('container', $services['scope.container']->getScope());
-        $this->assertEquals('custom', $services['scope.custom']->getScope());
-        $this->assertEquals('prototype', $services['scope.prototype']->getScope());
-        $this->assertTrue($services['request']->isSynthetic(), '->load() parses the synthetic flag');
-        $this->assertTrue($services['request']->isSynchronized(), '->load() parses the synchronized flag');
-        $this->assertTrue($services['request']->isLazy(), '->load() parses the lazy flag');
-        $this->assertNull($services['request']->getDecoratedService());
     }
 
     public function testLoadServices()
@@ -549,5 +539,36 @@ class XmlFileLoaderTest extends \PHPUnit_Framework_TestCase
         $loader->load('services23.xml');
 
         $this->assertTrue($container->getDefinition('bar')->isAutowired());
+    }
+
+    /**
+     * @group legacy
+     */
+    public function testAliasDefinitionContainsUnsupportedElements()
+    {
+        $container = new ContainerBuilder();
+        $loader = new XmlFileLoader($container, new FileLocator(self::$fixturesPath.'/xml'));
+
+        $deprecations = array();
+        set_error_handler(function ($type, $msg) use (&$deprecations) {
+            if (E_USER_DEPRECATED !== $type) {
+                restore_error_handler();
+
+                return call_user_func_array('PHPUnit_Util_ErrorHandler::handleError', func_get_args());
+            }
+
+            $deprecations[] = $msg;
+        });
+
+        $loader->load('legacy_invalid_alias_definition.xml');
+
+        restore_error_handler();
+
+        $this->assertTrue($container->has('bar'));
+
+        $this->assertCount(3, $deprecations);
+        $this->assertContains('Using the attribute "class" is deprecated for alias definition "bar"', $deprecations[0]);
+        $this->assertContains('Using the element "tag" is deprecated for alias definition "bar"', $deprecations[1]);
+        $this->assertContains('Using the element "factory" is deprecated for alias definition "bar"', $deprecations[2]);
     }
 }

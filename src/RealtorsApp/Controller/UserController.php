@@ -1,8 +1,16 @@
 <?php 
+namespace RealtorsApp\Controller;
+
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\JsonResponse;
+
+
 class UserController{
     
     public function index(){
-        //show the list of users
+        //show the list of users 
+        return new JsonResponse(['message'=>'Whoa']);
         
     }
     

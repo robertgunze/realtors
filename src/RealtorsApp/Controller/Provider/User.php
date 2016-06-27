@@ -1,8 +1,12 @@
 <?php 
+namespace RealtorsApp\Controller\Provider;
+
+use Silex\Application;
+use Silex\Api\ControllerProviderInterface;
 
 class User implements ControllerProviderInterface{
     
-    public function connect(\Silex\Application $app){
+    public function connect(Application $app){
         
         $users = $app['controllers_factory'];
         
