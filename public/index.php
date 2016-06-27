@@ -2,7 +2,7 @@
 require_once __DIR__.'/../vendor/autoload.php';
 
 
-$app = new Silex\Application();
+$app = new \Silex\Application();
 
 //set debug flag to true in dev mode
 $app['debug'] = true;
