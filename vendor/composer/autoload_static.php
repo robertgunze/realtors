@@ -11,9 +11,15 @@ class ComposerStaticInit2ba41b7eed48f9b5180ef62467a35524
         'c964ee0ededf28c96ebd9db5099ef910' => __DIR__ . '/..' . '/guzzlehttp/promises/src/functions_include.php',
         'a0edc8309cc5e1d60e3047b5df6b7052' => __DIR__ . '/..' . '/guzzlehttp/psr7/src/functions_include.php',
         '37a3dc5111fe8f707ab4c132ef1dbc62' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/functions_include.php',
+        '5255c38a0faeba867671b61dfda6d864' => __DIR__ . '/..' . '/paragonie/random_compat/lib/random.php',
+        '72579e7bd17821bb1321b87411366eae' => __DIR__ . '/..' . '/illuminate/support/helpers.php',
     );
 
     public static $prefixLengthsPsr4 = array (
+        'T' => 
+        array (
+            'Telegram\\Bot\\' => 13,
+        ),
         'S' => 
         array (
             'Symfony\\Polyfill\\Mbstring\\' => 26,
@@ -36,13 +42,15 @@ class ComposerStaticInit2ba41b7eed48f9b5180ef62467a35524
         array (
             'Psr\\Http\\Message\\' => 17,
         ),
-        'N' => 
-        array (
-            'Neoxygen\\NeoClient\\' => 19,
-        ),
         'M' => 
         array (
+            'MyCLabs\\Enum\\' => 13,
             'Monolog\\' => 8,
+        ),
+        'I' => 
+        array (
+            'Illuminate\\Support\\' => 19,
+            'Illuminate\\Contracts\\' => 21,
         ),
         'G' => 
         array (
@@ -50,10 +58,17 @@ class ComposerStaticInit2ba41b7eed48f9b5180ef62467a35524
             'GuzzleHttp\\Promise\\' => 19,
             'GuzzleHttp\\' => 11,
             'GraphAware\\NeoClient\\Formatter\\' => 31,
+            'GraphAware\\Neo4j\\Client\\' => 24,
+            'GraphAware\\Common\\' => 18,
+            'GraphAware\\Bolt\\' => 16,
         ),
     );
 
     public static $prefixDirsPsr4 = array (
+        'Telegram\\Bot\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/irazasyed/telegram-bot-sdk/src',
+        ),
         'Symfony\\Polyfill\\Mbstring\\' => 
         array (
             0 => __DIR__ . '/..' . '/symfony/polyfill-mbstring',
@@ -106,13 +121,21 @@ class ComposerStaticInit2ba41b7eed48f9b5180ef62467a35524
         array (
             0 => __DIR__ . '/..' . '/psr/http-message/src',
         ),
-        'Neoxygen\\NeoClient\\' => 
+        'MyCLabs\\Enum\\' => 
         array (
-            0 => __DIR__ . '/..' . '/graphaware/neo4j-php-client/src',
+            0 => __DIR__ . '/..' . '/myclabs/php-enum/src',
         ),
         'Monolog\\' => 
         array (
             0 => __DIR__ . '/..' . '/monolog/monolog/src/Monolog',
+        ),
+        'Illuminate\\Support\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/illuminate/support',
+        ),
+        'Illuminate\\Contracts\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/illuminate/contracts',
         ),
         'GuzzleHttp\\Psr7\\' => 
         array (
@@ -129,6 +152,18 @@ class ComposerStaticInit2ba41b7eed48f9b5180ef62467a35524
         'GraphAware\\NeoClient\\Formatter\\' => 
         array (
             0 => __DIR__ . '/..' . '/graphaware/neo4j-response-formatter/src',
+        ),
+        'GraphAware\\Neo4j\\Client\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/graphaware/neo4j-php-client/src',
+        ),
+        'GraphAware\\Common\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/graphaware/neo4j-common/src',
+        ),
+        'GraphAware\\Bolt\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/graphaware/neo4j-bolt/src',
         ),
     );
 
@@ -149,6 +184,13 @@ class ComposerStaticInit2ba41b7eed48f9b5180ef62467a35524
             'Pimple' => 
             array (
                 0 => __DIR__ . '/..' . '/pimple/pimple/src',
+            ),
+        ),
+        'D' => 
+        array (
+            'Doctrine\\Common\\Inflector\\' => 
+            array (
+                0 => __DIR__ . '/..' . '/doctrine/inflector/lib',
             ),
         ),
     );

@@ -15,5 +15,8 @@ $app->get('/api',function(){
 //registering routes
 require_once __DIR__.'/../app/routes.php';
 
+//registering providers 
+require_once __DIR__.'/../app/providers.php';
+
 $app->run();
 

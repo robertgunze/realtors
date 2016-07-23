@@ -1,91 +1,45 @@
-## 3.3.1 & 3.3.2
+# Changelog for v4
 
-* Fixed some bugs concerning live transactions in respect to the send Multiple in the scope of the tx
+4.4.3 - 09 June 2016
 
-## 3.3.0
+- Fixed same issue as 4.4.2 in a transaction
 
-* Introduced optional new response formatter by GraphAware
+4.4.2 - 09 June 2016
 
-## 3.2.0
+- Fixed an issue where empty nested arrays were not converted to json objects
 
-* Added Schema Index and Unique Constraint objects and methods for it in the Client
-* Uses now GraphUnit for Integration testing
+4.4.1 - 06 June 2016
 
-## 3.1.2
+- Upgraded to latest commons
 
-* Fixed docblock in live transaction
+4.4.0 - 28 May 2016
 
-## 3.1.1
+- Added getLabels method to the client
 
-* When using getTable, if relationships should be present, their data will be returned in the corresponding row's column
+4.3.1 - 13 May 2016
 
-## 3.1.0
+- Added the possibility to pass a default value to `Record::get()` to be returned if the record doesn't contains the given key
 
-* Added the possibility to add have headers to define query mode
-* Fixed builder preventing setting a custom formatter class via non-yml way
+4.2.0 - 06 May 2016
 
-## 2.2.7
+- Added events dispatching before and after running statements and stacks
 
-* Added method for enabling the HA Mode without YAML Config
+4.1.1 - 06 May 2016
 
-## 2.1.17
+- Added `registerExistingConnection` in ConnectionManager
 
-* Added useful methods for by passing relationships in node objects
+4.1.0 - 02 May 2016
 
-* `getConnectedNodes`
-* `getConnectedNode`
+- Added `updateStatistics()` method on the ResultCollection for combined statistics of stacks, transactions, etc..
 
+4.0.2 - 28 Apr 2016
 
-## 2.1.5
+- Fixed a bug where relationships deleted count was not hydrated in the http result update statistics
 
-* Fixed node internal ID not being casted to int
-* added a parameter `removeIndexIfExist` defaulted to false in `createUniqueConstraint` which will drop automatically 
-the index when creating the constraint
+4.0.1 - 27 Apr 2016
 
-```php
-$client->createUniqueConstraint('Repository', 'name', true);
-```
+- Fixed a bug where `nodeValue` was using a hardcoded identifier [8bf11473c9870c2423de2763622d2674b97216db](8bf11473c9870c2423de2763622d2674b97216db)
 
-* added `changePassword` method for Neo4j 2.2M04+
+4.0.0 - 25 Apr 2016
 
-```php
-$client->changePassword('myUser', 'newPassword');
-```
-
-## 2.1
-
-### Bug fixes
-
-* getProperty() on relationship was returning always true
-* sendMultiple was not converting empty arrays to maps in the Request json body
-
-### Features
-
-* added Prepared Transaction instance for handling multiple statements in one commit
-
-## 2.0
-
-* The bootstrap process has been changed
-* The `getVersion` method has been replaced by the `getNeo4jVersion()` method.
-* `listIndex` returns now an array of indexed properties for the given label
-* new method `listIndexes` returning an array `label => [$properties]`
-
-
-## 1.5
-- Added a ResponseFormatter for handling API responses
-
-## 1.4
-
-- Added a fallback mode for defining fallback connections in case of main connection failure
-
-## 1.3
-
-- ChangeFeed Module command added to core
-- HttpClient send method takes now a fifth parameter `query` to add query strings to the http request
-
-## 1.2
-
-- Auth Extension commands added to core
-
-- HttpClient receives now the ConnectionManager, it allows further improvement to provide fallback connections
-or duplication of commands
+Initial 4.0 release for support with Neo4j 3.0

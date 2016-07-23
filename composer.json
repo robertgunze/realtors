@@ -9,7 +9,8 @@
         "php": "~5.5",
         "silex/silex": "~2.0",
         "twig/twig": "~1.1",
-        "graphaware/neo4j-php-client": "^3.4"
+        "graphaware/neo4j-php-client": "^4.4",
+        "irazasyed/telegram-bot-sdk": "^2.0"
     },
     "autoload": {
     "psr-4": {

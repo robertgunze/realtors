@@ -1,15 +1,23 @@
 <?php
 
 /**
- * This file is part of the "-[:NEOXYGEN]->" NeoClient package.
+ * This file is part of the GraphAware Neo4j Client package.
  *
- * (c) Neoxygen.io <http://neoxygen.io>
+ * (c) GraphAware Limited <http://graphaware.com>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
+namespace GraphAware\Neo4j\Client\Connection;
 
-namespace Neoxygen\NeoClient\Connection;
+use GraphAware\Bolt\Configuration;
+use GraphAware\Bolt\GraphDatabase as BoltGraphDB;
+use GraphAware\Common\Cypher\Statement;
+use GraphAware\Neo4j\Client\Exception\Neo4jException;
+use GraphAware\Bolt\Exception\MessageFailureException;
+use GraphAware\Neo4j\Client\HttpDriver\GraphDatabase as HttpGraphDB;
+use GraphAware\Neo4j\Client\Stack;
+use GraphAware\Neo4j\Client\HttpDriver\Configuration as HttpConfig;
 
 class Connection
 {
@@ -19,59 +27,40 @@ class Connection
     private $alias;
 
     /**
-     * @var string The scheme to use for the Connection, could be http|https
+     * @var string
      */
-    private $scheme;
+    private $uri;
 
     /**
-     * @var string The connection's host
+     * @var \GraphAware\Common\Driver\DriverInterface The configured driver
      */
-    private $host;
+    private $driver;
 
     /**
-     * @var int The connection's port
+     * @var \GraphAware\Common\Driver\SessionInterface
      */
-    private $port;
+    private $session;
 
     /**
-     * @var bool Whether or not to use Auth headers
+     * @var int
      */
-    private $authMode;
+    private $timeout;
 
     /**
-     * @var string The username for the authentication
+     * Connection constructor.
+     *
+     * @param string $alias
+     * @param string $uri
+     * @param null   $config
+     * @param int    $timeout
      */
-    private $authUser;
-
-    /**
-     * @var string The user's password for the authentication
-     */
-    private $authPassword;
-
-    /**
-     * @param $alias
-     * @param string $scheme
-     * @param string $host
-     * @param int    $port
-     * @param string $authUser     The user login when using the authentication extension
-     * @param string $authPassword The user password when using the authentication extension
-     */
-    public function __construct(
-        $alias,
-        $scheme = 'http',
-        $host = 'localhost',
-        $port = 7474,
-        $authMode = false,
-        $authUser = null,
-        $authPassword = null)
+    public function __construct($alias, $uri, $config = null, $timeout)
     {
-        $this->alias = $alias;
-        $this->scheme = $scheme;
-        $this->host = $host;
-        $this->port = $port;
-        $this->authMode = (bool) $authMode;
-        $this->authUser = $authUser;
-        $this->authPassword = $authPassword;
+        $this->alias = (string) $alias;
+        $this->uri = (string) $uri;
+        $this->timeout = (int) $timeout;
+
+        $this->buildDriver();
     }
 
     /**
@@ -83,82 +72,121 @@ class Connection
     }
 
     /**
-     * @return string http|https
+     * @return \GraphAware\Common\Driver\DriverInterface
      */
-    public function getScheme()
+    public function getDriver()
     {
-        return $this->scheme;
+        return $this->driver;
     }
 
     /**
-     * @return string
+     * @param null  $query
+     * @param array $parameters
+     * @param null  $tag
+     *
+     * @return \GraphAware\Bolt\Protocol\Pipeline|\GraphAware\Neo4j\Client\HttpDriver\Pipeline
      */
-    public function getHost()
+    public function createPipeline($query = null, $parameters = array(), $tag = null)
     {
-        return $this->host;
+        $this->checkSession();
+        $parameters = is_array($parameters) ? $parameters : array();
+
+        return $this->session->createPipeline($query, $parameters, $tag);
     }
 
     /**
-     * @return string
+     * @param string      $statement
+     * @param array|null  $parameters
+     * @param null|string $tag
+     *
+     * @return \GraphAware\Common\Result\AbstractRecordCursor
+     *
+     * @throws Neo4jException
      */
-    public function getPort()
+    public function run($statement, $parameters = null, $tag)
     {
-        return $this->port;
+        $this->checkSession();
+        $parameters = (array) $parameters;
+
+        try {
+            $results = $this->session->run($statement, $parameters, $tag);
+
+            return $results;
+        } catch (MessageFailureException $e) {
+            $exception = new Neo4jException($e->getMessage());
+            $exception->setNeo4jStatusCode($e->getStatusCode());
+
+            throw $exception;
+        }
     }
 
     /**
-     * @return string
+     * @param array $queue
+     *
+     * @return \GraphAware\Common\Result\ResultCollection
      */
-    public function getBaseUrl()
+    public function runMixed(array $queue)
     {
-        return $this->scheme.'://'.$this->host.':'.$this->port;
+        $this->checkSession();
+        $pipeline = $this->createPipeline();
+
+        foreach ($queue as $element) {
+            if ($element instanceof Stack) {
+                foreach ($element->statements() as $statement) {
+                    $pipeline->push($statement->text(), $statement->parameters(), $statement->getTag());
+                }
+            } elseif ($element instanceof Statement) {
+                $pipeline->push($element->text(), $element->parameters(), $element->getTag());
+            }
+        }
+
+        return $pipeline->run();
     }
 
     /**
-     * @return bool
+     * @return \GraphAware\Common\Transaction\TransactionInterface
      */
-    public function isAuth()
+    public function getTransaction()
     {
-        return $this->authMode;
+        $this->checkSession();
+
+        return $this->session->transaction();
     }
 
     /**
-     * Sets the authentication mode to true.
+     * @return \GraphAware\Common\Driver\SessionInterface
      */
-    public function setAuthMode()
+    public function getSession()
     {
-        $this->authMode = true;
+        $this->checkSession();
+
+        return $this->session;
     }
 
-    /**
-     * @return string
-     */
-    public function getAuthUser()
+    private function buildDriver()
     {
-        return $this->authUser;
+        $params = parse_url($this->uri);
+
+        if (preg_match('/bolt/', $this->uri)) {
+            $port = isset($params['port']) ? (int) $params['port'] : 7687;
+            $uri = sprintf('%s://%s:%d', $params['scheme'], $params['host'], $port);
+            $config = null;
+            if (isset($params['user']) && isset($params['pass'])) {
+                $config = Configuration::withCredentials($params['user'], $params['pass']);
+            }
+            $this->driver = BoltGraphDB::driver($uri, $config);
+        } elseif (preg_match('/http/', $this->uri)) {
+            $uri = $this->uri;
+            $this->driver = HttpGraphDB::driver($uri, HttpConfig::withTimeout($this->timeout));
+        } else {
+            throw new \RuntimeException(sprintf('Unable to build a driver from uri "%s"', $this->uri));
+        }
     }
 
-    /**
-     * @param string $username
-     */
-    public function setAuthUser($username)
+    private function checkSession()
     {
-        $this->authUser = $username;
-    }
-
-    /**
-     * @return string
-     */
-    public function getAuthPassword()
-    {
-        return $this->authPassword;
-    }
-
-    /**
-     * @param string $password
-     */
-    public function setAuthPassword($password)
-    {
-        $this->authPassword = $password;
+        if (null === $this->session) {
+            $this->session = $this->driver->session();
+        }
     }
 }

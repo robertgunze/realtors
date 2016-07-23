@@ -1,338 +1,237 @@
 <?php
 
 /**
- * This file is part of the "-[:NEOXYGEN]->" NeoClient package.
+ * This file is part of the GraphAware Neo4j Client package.
  *
- * (c) Neoxygen.io <http://neoxygen.io>
+ * (c) GraphAware Limited <http://graphaware.com>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
+namespace GraphAware\Neo4j\Client\Formatter;
 
-namespace Neoxygen\NeoClient\Formatter;
+use GraphAware\Common\Result\AbstractRecordCursor;
+use GraphAware\Neo4j\Client\Formatter\Type\Node;
+use GraphAware\Neo4j\Client\Formatter\Type\Path;
+use GraphAware\Neo4j\Client\Formatter\Type\Relationship;
+use GraphAware\Common\Cypher\StatementInterface;
+use GraphAware\Neo4j\Client\HttpDriver\Result\ResultSummary;
+use GraphAware\Neo4j\Client\HttpDriver\Result\StatementStatistics;
 
-class Result
+class Result extends AbstractRecordCursor
 {
-    /** @var Node[] */
-    protected $nodes;
+    /**
+     * @var RecordView[]
+     */
+    protected $records = [];
 
-    /** @var Relationship[] */
-    protected $relationships;
+    /**
+     * @var string[]
+     */
+    protected $fields = [];
 
-    protected $errors;
+    /**
+     * @var ResultSummary
+     */
+    protected $resultSummary;
 
-    /** @var array */
-    protected $identifiers = [];
+    /**
+     * @var array
+     */
+    private $graph;
 
-    /** @var  array */
-    protected $tableFormat;
-
-    public function __construct()
+    /**
+     * {@inheritdoc}
+     */
+    public function __construct(StatementInterface $statement)
     {
-        $this->nodes = array();
-        $this->relationships = array();
-    }
+        $this->resultSummary = new ResultSummary($statement);
 
-    public function addNode(Node $node)
-    {
-        $this->nodes[$node->getId()] = $node;
-    }
-
-    public function addRelationship(Relationship $relationship)
-    {
-        $this->relationships[$relationship->getId()] = $relationship;
+        parent::__construct($statement);
     }
 
     /**
-     * Returns all nodes if called without arguments. Returns all nodes with
-     * the given labels if called with an array of labels. Otherwise, acts
-     * identically as {@link Result::getNodesByLabels()}.
-     *
-     * @param string|string[]|null $label
-     * @param bool                 $labelizedKeys
-     *
-     * @return Node[]
+     * {@inheritdoc}
      */
-    public function getNodes($label = null, $labelizedKeys = false)
+    public function size()
     {
-        if (null !== $label) {
-            if (is_array($label)) {
-                $nodes = [];
-                foreach ($label as $lbl) {
-                    $nodes[$lbl] = $this->getNodesByLabel($lbl);
-                }
-
-                return $nodes;
-            }
-
-            return $this->getNodesByLabel($label, $labelizedKeys);
-        }
-
-        return $this->nodes;
+        return count($this->records);
     }
 
     /**
-     * Returns a single node by its Neo4j node ID number, or null if the node
-     * is not present in the result.
-     *
-     * @param int $id Neo4j node ID.
-     *
-     * @return Node|null
+     * @return RecordView|null
      */
-    public function getNodeById($id)
+    public function firstRecord()
     {
-        if (!isset($this->nodes[$id])) {
-            return;
-        }
-
-        return $this->nodes[$id];
-    }
-
-    /**
-     * Returns a single node from the nodes collection
-     * Use when you do cypher queries returning only one node.
-     *
-     * @param string|null $label Return a node for this label only.
-     *
-     * @return Node|null
-     */
-    public function getSingleNode($label = null)
-    {
-        $nodes = (null === $label) ? $this->getNodes() : $this->getNodesByLabel($label);
-        $single = current($nodes);
-
-        return $single;
-    }
-
-    /**
-     * Returns a single node for a given label.
-     *
-     * @param string $label The label to match for
-     *
-     * @return Node|null The Node or null if not node found matching the label
-     */
-    public function getSingleNodeByLabel($label)
-    {
-        foreach ($this->nodes as $node) {
-            if ($node->hasLabel($label)) {
-                return $node;
-            }
+        if (!empty($this->records)) {
+            return $this->records[0];
         }
 
         return;
     }
 
     /**
-     * Returns all nodes with the given label.
-     *
-     * @param string $name
-     * @param bool   $labelizedKeys When true, the results are indexed by node
-     *                              label. Assumes only one node per label.
-     *
-     * @return Node[]
+     * @param array $fields
      */
-    public function getNodesByLabel($name, $labelizedKeys = false)
+    public function setFields(array $fields)
     {
-        $collection = array();
-        foreach ($this->getNodes() as $node) {
-            if ($node->hasLabel($name)) {
-                if ($labelizedKeys) {
-                    $collection[$name] = $node;
-                } else {
-                    $collection[] = $node;
-                }
-            }
-        }
-
-        return $collection;
+        $this->fields = $fields;
     }
 
     /**
-     * Returns all nodes with the given labels.
-     *
-     * @param array $labels
-     * @param bool  $labelizedKeys When true, the results are indexed by node
-     *                             label. Assumes one node per label.
-     *
-     * @return Node[]
+     * @param array $graph
      */
-    public function getNodesByLabels(array $labels = array(), $labelizedKeys = false)
+    public function setGraph(array $graph)
     {
-        $nodes = [];
-        foreach ($labels as $label) {
-            $lnodes = $this->getNodesByLabel($label);
-            foreach ($lnodes as $node) {
-                if ($labelizedKeys) {
-                    $nodes[$label] = $node;
-                } else {
-                    $nodes[] = $node;
-                }
-            }
-        }
-
-        return $nodes;
+        $this->graph = $graph;
     }
 
     /**
-     * @return Relationship[]
+     * @param $data
+     * @param $graph
      */
-    public function getRelationships()
+    public function pushRecord($data, $graph)
     {
-        return $this->relationships;
+        $mapped = $this->array_map_deep($data, $graph);
+        $this->records[] = new RecordView($this->fields, $mapped);
     }
 
     /**
-     * Returns the relationship by its Neo4j ID.
-     *
-     * @param int $id The id of the relationship.
-     *
-     * @return Relationship|null
+     * @param array $stats
      */
-    public function getRelationship($id)
+    public function setStats(array $stats)
     {
-        if (!isset($this->relationships[$id])) {
-            return;
-        }
-
-        return $this->relationships[$id];
+        $this->resultSummary->setStatistics(new StatementStatistics($stats));
     }
 
     /**
-     * @return int Number of nodes in the result.
+     * @return RecordView[]
      */
-    public function getNodesCount()
+    public function getRecords()
     {
-        return count($this->nodes);
+        return $this->records;
     }
 
     /**
-     * @return int Number of relationships in the result.
+     * @return RecordView|null
      */
-    public function getRelationshipsCount()
+    public function getRecord()
     {
-        return count($this->relationships);
-    }
-
-    public function addNodeToIdentifier($nodeId, $identifier)
-    {
-        if (isset($this->identifiers[$identifier])) {
-            foreach ($this->identifiers[$identifier] as $node) {
-                if (null === $node || ( !is_array($node) && $node->getId() === $nodeId)) {
-                    return;
-                }
-            }
-        }
-        $this->identifiers[$identifier][] = $this->getNodeById($nodeId);
-    }
-
-    public function addRelationshipToIdentifier($relationshipId, $identifier)
-    {
-        if (isset($this->identifiers[$identifier])) {
-            foreach ($this->identifiers[$identifier] as $rel) {
-                if ($rel->getId() === $relationshipId) {
-                    return;
-                }
-            }
-        }
-        $this->identifiers[$identifier][] = $this->getRelationship($relationshipId);
-    }
-
-    public function addRowToIdentifier($value, $identifier)
-    {
-        if (null === $value) {
-            return;
-        }
-        $this->identifiers[$identifier][] = $value;
+        return !empty($this->records) ? $this->records[0] : null;
     }
 
     /**
-     * Returns the item or items bound to the given identifier, or $default
-     * if no items are bound.
-     *
-     * @param string $identifier
-     * @param mixed  $default       A value to return if the identifier is not bound.
-     * @param bool   $singleAsArray When true, always returns a single value as
-     *                              an array.
-     *
-     * @return mixed
-     */
-    public function get($identifier, $default = null, $singleAsArray = false)
-    {
-        if (!array_key_exists($identifier, $this->identifiers)) {
-            return $default;
-        }
-
-        if (is_array($this->identifiers[$identifier]) && 1 === count($this->identifiers[$identifier]) && $singleAsArray === false) {
-            return array_values($this->identifiers[$identifier])[0];
-        }
-
-        return $this->identifiers[$identifier];
-    }
-
-    /**
-     * Returns a single item bound to the given identifier, or the default if
-     * the identifier is not bound.
-     *
-     * @param string $identifier
-     * @param mixed  $default    A value to return if the identifier is not bound.
-     *
-     * @return mixed
-     */
-    public function getSingle($identifier, $default = null)
-    {
-        $get = $this->get($identifier, $default);
-        if (is_array($get)) {
-            return array_values($this->identifiers[$identifier])[0];
-        }
-
-        return $get;
-    }
-
-    /**
-     * @return string[]
-     */
-    public function getIdentifiers()
-    {
-        return array_keys($this->identifiers);
-    }
-
-    /**
-     * @return array
-     */
-    public function getAllByIdentifier()
-    {
-        return $this->identifiers;
-    }
-
-    /**
-     * @param string $i Query identifier to check.
-     *
      * @return bool
      */
-    public function hasIdentifier($i)
+    public function hasRecord()
     {
-        return array_key_exists($i, $this->identifiers);
-    }
-
-    public function addIdentifierValue($k, $v)
-    {
-        if (array_key_exists($k, $this->identifiers)) {
-            $this->addRowToIdentifier($v, $k);
-        }
-
-        return $this->identifiers[$k] = $v;
-    }
-
-    public function setTableFormat(array $table)
-    {
-        $this->tableFormat = $table;
+        return !empty($this->records);
     }
 
     /**
+     * @param array $array
+     * @param array $graph
+     *
      * @return array
      */
-    public function getTableFormat()
+    private function array_map_deep(array $array, array $graph)
     {
-        return $this->tableFormat;
+        foreach ($array as $k => $v) {
+            if (!is_array($v)) {
+                continue;
+            }
+
+            if (array_key_exists('metadata', $v) && isset($v['metadata']['labels'])) {
+                $array[$k] = new Node($v['metadata']['id'], $v['metadata']['labels'], $v['data']);
+            } elseif (array_key_exists('start', $v) && array_key_exists('type', $v)) {
+                $array[$k] = new Relationship(
+                    $v['metadata']['id'],
+                    $v['type'],
+                    $this->extractIdFromRestUrl($v['start']),
+                    $this->extractIdFromRestUrl($v['end']),
+                    $v['data']
+                    );
+            } elseif (array_key_exists('length', $v) && array_key_exists('relationships', $v) && array_key_exists('nodes', $v)) {
+                $array[$k] = new Path(
+                    $this->getNodesFromPathMetadata($v, $graph),
+                    $this->getRelationshipsFromPathMetadata($v, $graph)
+                );
+            } else {
+                $array[$k] = $this->array_map_deep($v, $graph);
+            }
+        }
+
+        return $array;
+    }
+
+    /**
+     * @param string $url
+     *
+     * @return int
+     */
+    private function extractIdFromRestUrl($url)
+    {
+        $expl = explode('/', $url);
+
+        return (int) $expl[count($expl) - 1];
+    }
+
+    /**
+     * @param array $metadata
+     * @param array $graph
+     *
+     * @return array
+     */
+    private function getRelationshipsFromPathMetadata(array $metadata, array $graph)
+    {
+        $rels = [];
+
+        foreach ($metadata['relationships'] as $relationship) {
+            $relId = $this->extractIdFromRestUrl($relationship);
+
+            foreach ($graph['relationships'] as $grel) {
+                $grid = (int) $grel['id'];
+                if ($grid === $relId) {
+                    $rels[$grid] = new Relationship(
+                        $grel['id'],
+                        $grel['type'],
+                        $grel['startNode'],
+                        $grel['endNode'],
+                        $grel['properties']
+                    );
+                }
+            }
+        }
+
+        return array_values($rels);
+    }
+
+    /**
+     * @param array $metadata
+     * @param array $graph
+     *
+     * @return array
+     */
+    private function getNodesFromPathMetadata(array $metadata, array $graph)
+    {
+        $nodes = [];
+
+        foreach ($metadata['nodes'] as $node) {
+            $nodeId = $this->extractIdFromRestUrl($node);
+
+            foreach ($graph['nodes'] as $gn) {
+                $gnid = (int) $gn['id'];
+
+                if ($gnid === $nodeId) {
+                    $nodes[$nodeId] = new Node(
+                        $gn['id'],
+                        $gn['labels'],
+                        $gn['properties']
+                    );
+                }
+            }
+        }
+
+        return array_values($nodes);
     }
 }

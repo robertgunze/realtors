@@ -6,6 +6,7 @@ $vendorDir = dirname(dirname(__FILE__));
 $baseDir = dirname($vendorDir);
 
 return array(
+    'Telegram\\Bot\\' => array($vendorDir . '/irazasyed/telegram-bot-sdk/src'),
     'Symfony\\Polyfill\\Mbstring\\' => array($vendorDir . '/symfony/polyfill-mbstring'),
     'Symfony\\Component\\Yaml\\' => array($vendorDir . '/symfony/yaml'),
     'Symfony\\Component\\Routing\\' => array($vendorDir . '/symfony/routing'),
@@ -19,10 +20,15 @@ return array(
     'Silex\\' => array($vendorDir . '/silex/silex/src/Silex'),
     'RealtorsApp\\' => array($baseDir . '/src/RealtorsApp'),
     'Psr\\Http\\Message\\' => array($vendorDir . '/psr/http-message/src'),
-    'Neoxygen\\NeoClient\\' => array($vendorDir . '/graphaware/neo4j-php-client/src'),
+    'MyCLabs\\Enum\\' => array($vendorDir . '/myclabs/php-enum/src'),
     'Monolog\\' => array($vendorDir . '/monolog/monolog/src/Monolog'),
+    'Illuminate\\Support\\' => array($vendorDir . '/illuminate/support'),
+    'Illuminate\\Contracts\\' => array($vendorDir . '/illuminate/contracts'),
     'GuzzleHttp\\Psr7\\' => array($vendorDir . '/guzzlehttp/psr7/src'),
     'GuzzleHttp\\Promise\\' => array($vendorDir . '/guzzlehttp/promises/src'),
     'GuzzleHttp\\' => array($vendorDir . '/guzzlehttp/guzzle/src'),
     'GraphAware\\NeoClient\\Formatter\\' => array($vendorDir . '/graphaware/neo4j-response-formatter/src'),
+    'GraphAware\\Neo4j\\Client\\' => array($vendorDir . '/graphaware/neo4j-php-client/src'),
+    'GraphAware\\Common\\' => array($vendorDir . '/graphaware/neo4j-common/src'),
+    'GraphAware\\Bolt\\' => array($vendorDir . '/graphaware/neo4j-bolt/src'),
 );
